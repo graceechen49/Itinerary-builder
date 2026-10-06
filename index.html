@@ -226,7 +226,20 @@
       });
 
       document.getElementById('output').style.display = 'block';
+
+      // Temporarily change the page title to set the PDF file name
+      const originalTitle = document.title;
+      if (startVal && endVal) {
+        document.title = `Itinerary (${startVal} to ${endVal})`;
+      } else {
+        document.title = 'Itinerary';
+      }
+
+      // Trigger the print/save window
       window.print();
+
+      // Change the tab title back to normal
+      document.title = originalTitle;
     }
   </script>
 
