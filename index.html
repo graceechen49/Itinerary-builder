@@ -34,9 +34,6 @@
 
   <div class="form-container">
     <h2>Enter Itinerary Details</h2>
-    
-    <label>Logo PNG URL (Optional):</label>
-    <input type="text" id="logoUrl" placeholder="Paste image link here...">
 
     <label>Traveler Name:</label>
     <input type="text" id="clientName" placeholder="Ranjan Bhaduri">
@@ -55,9 +52,9 @@
 
   <div class="itinerary-preview" id="output" style="display:none;">
     
-    <!-- Centered Header Section -->
     <div class="output-header">
-      <img id="outLogo" class="output-logo" src="" alt="Bodhi Logo" style="display: none;">
+      <!-- HARDCODED LOGO IMAGE -->
+      <img class="output-logo" src="logo.png" alt="Bodhi Logo">
       <h1>Bodhi Research Group Travel Itinerary</h1>
     </div>
 
@@ -80,7 +77,6 @@
 
       if (!startVal || !endVal) return;
 
-      // Splitting the date exactly as written to avoid timezone shifts
       const [sYear, sMonth, sDay] = startVal.split('-');
       const [eYear, eMonth, eDay] = endVal.split('-');
       
@@ -92,4 +88,76 @@
       let dayCount = 1;
 
       while (curr <= end) {
-        const dateStr = curr.toLocaleDateString(undefined, { month: 'short', day: 'numeric
+        const dateStr = curr.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+        
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'day-box';
+        dayDiv.innerHTML = `
+          <h4>Day ${dayCount} (${dateStr})</h4>
+          <div class="events-list" id="events-day-${dayCount}"></div>
+          <button type="button" class="small-btn" onclick="addEventRow(${dayCount})">+ Add Time Block</button>
+        `;
+        container.appendChild(dayDiv);
+
+        addEventRow(dayCount);
+
+        curr.setDate(curr.getDate() + 1);
+        dayCount++;
+      }
+    }
+
+    function addEventRow(dayNum) {
+      const list = document.getElementById(`events-day-${dayNum}`);
+      const row = document.createElement('div');
+      row.className = 'event-row';
+      row.innerHTML = `
+        <input type="text" placeholder="Time (e.g. 9:00 AM)" class="ev-time">
+        <input type="text" placeholder="Location Name" class="ev-loc">
+        <input type="text" placeholder="Notes / Activity" class="ev-note">
+        <button type="button" class="small-btn delete-btn" onclick="this.parentElement.remove()">X</button>
+      `;
+      list.appendChild(row);
+    }
+
+    function generateItinerary() {
+      document.getElementById('outName').innerText = document.getElementById('clientName').value;
+      
+      const startVal = document.getElementById('startDate').value;
+      const endVal = document.getElementById('endDate').value;
+      document.getElementById('outDates').innerText = startVal && endVal ? `${startVal} to ${endVal}` : '';
+
+      const scheduleContainer = document.getElementById('outSchedule');
+      scheduleContainer.innerHTML = '<h3>Schedule</h3>';
+
+      const dayBoxes = document.querySelectorAll('.day-box');
+      dayBoxes.forEach((box) => {
+        const dayTitle = box.querySelector('h4').innerText;
+        const rows = box.querySelectorAll('.event-row');
+
+        let dayHTML = `<h4 class="day-header">${dayTitle}</h4>`;
+        
+        rows.forEach(r => {
+          const time = r.querySelector('.ev-time').value;
+          const loc = r.querySelector('.ev-loc').value;
+          const note = r.querySelector('.ev-note').value;
+
+          if (time || loc || note) {
+            const mapsUrl = loc ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}` : '';
+            const locDisplay = loc ? ` - <a href="${mapsUrl}" target="_blank">${loc}</a>` : '';
+
+            dayHTML += `
+              <div class="event-item">
+                <strong>${time || 'All Day'}:</strong> ${note}${locDisplay}
+              </div>`;
+          }
+        });
+        scheduleContainer.innerHTML += dayHTML;
+      });
+
+      document.getElementById('output').style.display = 'block';
+      window.print();
+    }
+  </script>
+
+</body>
+</html>
