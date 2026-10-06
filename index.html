@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Company Itinerary Builder</title>
+  <title>Bodhi Research Group Itinerary Builder</title>
   <style>
     body { font-family: Arial, sans-serif; margin: 30px; }
     .form-container, .itinerary-preview { border: 1px solid #ccc; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
     label { font-weight: bold; display: block; margin-top: 10px; }
     input, textarea { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
-    button { background-color: #0056b3; color: white; padding: 10px 15px; border: none; border-radius: 4px; margin-top: 15px; cursor: pointer; }
+    button { background-color: #0f2b46; color: white; padding: 10px 15px; border: none; border-radius: 4px; margin-top: 15px; cursor: pointer; }
+    .logo { height: 40px; margin-bottom: 10px; display: block; }
     @media print {
       .form-container, button { display: none; }
       .itinerary-preview { border: none; }
@@ -19,8 +20,9 @@
 
   <div class="form-container">
     <h2>Enter Itinerary Details</h2>
-    <label>Client / Traveler Name:</label>
-    <input type="text" id="clientName" placeholder="John Doe">
+    
+    <label>Traveler Name:</label>
+    <input type="text" id="clientName" placeholder="Ranjan Bhaduri">
 
     <label>Trip Dates:</label>
     <input type="text" id="tripDates" placeholder="Oct 12 - Oct 15, 2026">
@@ -32,7 +34,11 @@
   </div>
 
   <div class="itinerary-preview" id="output" style="display:none;">
-    <h1 style="color: #0056b3;">Company Travel Itinerary</h1>
+    <svg class="logo" viewBox="0 0 160 40" xmlns="http://www.w3.org/2000/svg">
+      <text x="0" y="28" font-family="Arial, sans-serif" font-weight="bold" font-size="22" fill="#0f2b46">BODHI</text>
+    </svg>
+    
+    <h1 style="color: #0f2b46; margin-top: 5px;">Company Travel Itinerary</h1>
     <p><strong>Prepared For:</strong> <span id="outName"></span></p>
     <p><strong>Dates:</strong> <span id="outDates"></span></p>
     <hr>
