@@ -9,7 +9,6 @@
     label { font-weight: bold; display: block; margin-top: 10px; }
     input, textarea { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
     button { background-color: #0f2b46; color: white; padding: 10px 15px; border: none; border-radius: 4px; margin-top: 15px; cursor: pointer; }
-    .logo { height: 40px; margin-bottom: 10px; display: block; }
     
     .day-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 6px; margin-bottom: 15px; }
     .event-row { display: grid; grid-template-columns: 100px 1fr 1fr auto; gap: 8px; margin-bottom: 8px; align-items: center; }
@@ -18,6 +17,11 @@
     .delete-btn { background: #e53e3e; }
     .day-header { color: #0f2b46; border-bottom: 2px solid #cbd5e0; padding-bottom: 5px; margin-top: 25px; }
     .event-item { margin-bottom: 10px; padding-left: 10px; border-left: 3px solid #0f2b46; }
+
+    /* Output header centering styles */
+    .output-header { text-align: center; margin-bottom: 20px; }
+    .output-logo { height: 60px; display: block; margin: 0 auto 10px auto; }
+    .output-header h1 { color: #0f2b46; margin: 5px 0 15px 0; }
 
     @media print {
       body { margin: 0; padding: 10px; }
@@ -31,6 +35,9 @@
   <div class="form-container">
     <h2>Enter Itinerary Details</h2>
     
+    <label>Logo PNG URL (Optional):</label>
+    <input type="text" id="logoUrl" placeholder="Paste image link here...">
+
     <label>Traveler Name:</label>
     <input type="text" id="clientName" placeholder="Ranjan Bhaduri">
 
@@ -47,11 +54,13 @@
   </div>
 
   <div class="itinerary-preview" id="output" style="display:none;">
-    <svg class="logo" viewBox="0 0 160 40" xmlns="http://www.w3.org/2000/svg">
-      <text x="0" y="28" font-family="Arial, sans-serif" font-weight="bold" font-size="22" fill="#0f2b46">BODHI</text>
-    </svg>
     
-    <h1 style="color: #0f2b46; margin-top: 5px;">Company Travel Itinerary</h1>
+    <!-- Centered Header Section -->
+    <div class="output-header">
+      <img id="outLogo" class="output-logo" src="" alt="Bodhi Logo" style="display: none;">
+      <h1>Bodhi Research Group Travel Itinerary</h1>
+    </div>
+
     <p><strong>Prepared For:</strong> <span id="outName"></span></p>
     <p><strong>Dates:</strong> <span id="outDates"></span></p>
     <hr>
@@ -64,87 +73,23 @@
     document.getElementById('endDate').addEventListener('change', updateDays);
 
     function updateDays() {
-      const start = new Date(document.getElementById('startDate').value);
-      const end = new Date(document.getElementById('endDate').value);
+      const startVal = document.getElementById('startDate').value;
+      const endVal = document.getElementById('endDate').value;
       const container = document.getElementById('daysBuilder');
       container.innerHTML = '';
 
-      if (isNaN(start) || isNaN(end) || start > end) return;
+      if (!startVal || !endVal) return;
+
+      // Splitting the date exactly as written to avoid timezone shifts
+      const [sYear, sMonth, sDay] = startVal.split('-');
+      const [eYear, eMonth, eDay] = endVal.split('-');
+      
+      let curr = new Date(sYear, sMonth - 1, sDay);
+      const end = new Date(eYear, eMonth - 1, eDay);
+
+      if (curr > end) return;
 
       let dayCount = 1;
-      let curr = new Date(start);
 
       while (curr <= end) {
-        const dateStr = curr.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-        
-        const dayDiv = document.createElement('div');
-        dayDiv.className = 'day-box';
-        dayDiv.innerHTML = `
-          <h4>Day ${dayCount} (${dateStr})</h4>
-          <div class="events-list" id="events-day-${dayCount}"></div>
-          <button type="button" class="small-btn" onclick="addEventRow(${dayCount})">+ Add Time Block</button>
-        `;
-        container.appendChild(dayDiv);
-
-        addEventRow(dayCount);
-
-        curr.setDate(curr.getDate() + 1);
-        dayCount++;
-      }
-    }
-
-    function addEventRow(dayNum) {
-      const list = document.getElementById(`events-day-${dayNum}`);
-      const row = document.createElement('div');
-      row.className = 'event-row';
-      row.innerHTML = `
-        <input type="text" placeholder="Time (e.g. 9:00 AM)" class="ev-time">
-        <input type="text" placeholder="Location Name" class="ev-loc">
-        <input type="text" placeholder="Notes / Activity" class="ev-note">
-        <button type="button" class="small-btn delete-btn" onclick="this.parentElement.remove()">X</button>
-      `;
-      list.appendChild(row);
-    }
-
-    function generateItinerary() {
-      document.getElementById('outName').innerText = document.getElementById('clientName').value;
-      
-      const startVal = document.getElementById('startDate').value;
-      const endVal = document.getElementById('endDate').value;
-      document.getElementById('outDates').innerText = startVal && endVal ? `${startVal} to ${endVal}` : '';
-
-      const scheduleContainer = document.getElementById('outSchedule');
-      scheduleContainer.innerHTML = '<h3>Schedule</h3>';
-
-      const dayBoxes = document.querySelectorAll('.day-box');
-      dayBoxes.forEach((box) => {
-        const dayTitle = box.querySelector('h4').innerText;
-        const rows = box.querySelectorAll('.event-row');
-
-        let dayHTML = `<h4 class="day-header">${dayTitle}</h4>`;
-        
-        rows.forEach(r => {
-          const time = r.querySelector('.ev-time').value;
-          const loc = r.querySelector('.ev-loc').value;
-          const note = r.querySelector('.ev-note').value;
-
-          if (time || loc || note) {
-            const mapsUrl = loc ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}` : '';
-            const locDisplay = loc ? ` - <a href="${mapsUrl}" target="_blank">${loc}</a>` : '';
-
-            dayHTML += `
-              <div class="event-item">
-                <strong>${time || 'All Day'}:</strong> ${note}${locDisplay}
-              </div>`;
-          }
-        });
-        scheduleContainer.innerHTML += dayHTML;
-      });
-
-      document.getElementById('output').style.display = 'block';
-      window.print();
-    }
-  </script>
-
-</body>
-</html>
+        const dateStr = curr.toLocaleDateString(undefined, { month: 'short', day: 'numeric
