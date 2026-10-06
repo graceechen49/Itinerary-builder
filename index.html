@@ -10,9 +10,19 @@
     input, textarea { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
     button { background-color: #0f2b46; color: white; padding: 10px 15px; border: none; border-radius: 4px; margin-top: 15px; cursor: pointer; }
     .logo { height: 40px; margin-bottom: 10px; display: block; }
+    
+    .day-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 6px; margin-bottom: 15px; }
+    .event-row { display: grid; grid-template-columns: 100px 1fr 1fr auto; gap: 8px; margin-bottom: 8px; align-items: center; }
+    @media (max-width: 600px) { .event-row { grid-template-columns: 1fr; } }
+    .small-btn { background: #2c7a7b; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+    .delete-btn { background: #e53e3e; }
+    .day-header { color: #0f2b46; border-bottom: 2px solid #cbd5e0; padding-bottom: 5px; margin-top: 25px; }
+    .event-item { margin-bottom: 10px; padding-left: 10px; border-left: 3px solid #0f2b46; }
+
     @media print {
+      body { margin: 0; padding: 10px; }
       .form-container, button { display: none; }
-      .itinerary-preview { border: none; }
+      .itinerary-preview { border: none; padding: 0; }
     }
   </style>
 </head>
@@ -24,11 +34,14 @@
     <label>Traveler Name:</label>
     <input type="text" id="clientName" placeholder="Ranjan Bhaduri">
 
-    <label>Trip Dates:</label>
-    <input type="text" id="tripDates" placeholder="Oct 12 - Oct 15, 2026">
+    <label>Trip Start Date:</label>
+    <input type="date" id="startDate">
 
-    <label>Schedule & Notes:</label>
-    <textarea id="details" rows="5" placeholder="Day 1: Arrival at 10 AM..."></textarea>
+    <label>Trip End Date:</label>
+    <input type="date" id="endDate">
+
+    <h3>Daily Schedule & Events</h3>
+    <div id="daysBuilder"></div>
 
     <button onclick="generateItinerary()">Generate & Print</button>
   </div>
@@ -42,16 +55,92 @@
     <p><strong>Prepared For:</strong> <span id="outName"></span></p>
     <p><strong>Dates:</strong> <span id="outDates"></span></p>
     <hr>
-    <h3>Schedule</h3>
-    <p id="outDetails" style="white-space: pre-wrap;"></p>
+    
+    <div id="outSchedule"></div>
   </div>
 
   <script>
+    document.getElementById('startDate').addEventListener('change', updateDays);
+    document.getElementById('endDate').addEventListener('change', updateDays);
+
+    function updateDays() {
+      const start = new Date(document.getElementById('startDate').value);
+      const end = new Date(document.getElementById('endDate').value);
+      const container = document.getElementById('daysBuilder');
+      container.innerHTML = '';
+
+      if (isNaN(start) || isNaN(end) || start > end) return;
+
+      let dayCount = 1;
+      let curr = new Date(start);
+
+      while (curr <= end) {
+        const dateStr = curr.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+        
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'day-box';
+        dayDiv.innerHTML = `
+          <h4>Day ${dayCount} (${dateStr})</h4>
+          <div class="events-list" id="events-day-${dayCount}"></div>
+          <button type="button" class="small-btn" onclick="addEventRow(${dayCount})">+ Add Time Block</button>
+        `;
+        container.appendChild(dayDiv);
+
+        addEventRow(dayCount);
+
+        curr.setDate(curr.getDate() + 1);
+        dayCount++;
+      }
+    }
+
+    function addEventRow(dayNum) {
+      const list = document.getElementById(`events-day-${dayNum}`);
+      const row = document.createElement('div');
+      row.className = 'event-row';
+      row.innerHTML = `
+        <input type="text" placeholder="Time (e.g. 9:00 AM)" class="ev-time">
+        <input type="text" placeholder="Location Name" class="ev-loc">
+        <input type="text" placeholder="Notes / Activity" class="ev-note">
+        <button type="button" class="small-btn delete-btn" onclick="this.parentElement.remove()">X</button>
+      `;
+      list.appendChild(row);
+    }
+
     function generateItinerary() {
       document.getElementById('outName').innerText = document.getElementById('clientName').value;
-      document.getElementById('outDates').innerText = document.getElementById('tripDates').value;
-      document.getElementById('outDetails').innerText = document.getElementById('details').value;
       
+      const startVal = document.getElementById('startDate').value;
+      const endVal = document.getElementById('endDate').value;
+      document.getElementById('outDates').innerText = startVal && endVal ? `${startVal} to ${endVal}` : '';
+
+      const scheduleContainer = document.getElementById('outSchedule');
+      scheduleContainer.innerHTML = '<h3>Schedule</h3>';
+
+      const dayBoxes = document.querySelectorAll('.day-box');
+      dayBoxes.forEach((box) => {
+        const dayTitle = box.querySelector('h4').innerText;
+        const rows = box.querySelectorAll('.event-row');
+
+        let dayHTML = `<h4 class="day-header">${dayTitle}</h4>`;
+        
+        rows.forEach(r => {
+          const time = r.querySelector('.ev-time').value;
+          const loc = r.querySelector('.ev-loc').value;
+          const note = r.querySelector('.ev-note').value;
+
+          if (time || loc || note) {
+            const mapsUrl = loc ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc)}` : '';
+            const locDisplay = loc ? ` - <a href="${mapsUrl}" target="_blank">${loc}</a>` : '';
+
+            dayHTML += `
+              <div class="event-item">
+                <strong>${time || 'All Day'}:</strong> ${note}${locDisplay}
+              </div>`;
+          }
+        });
+        scheduleContainer.innerHTML += dayHTML;
+      });
+
       document.getElementById('output').style.display = 'block';
       window.print();
     }
